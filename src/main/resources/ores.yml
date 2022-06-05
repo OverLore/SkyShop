@@ -1,0 +1,29 @@
+ores:
+  name: "三"
+  size: 54
+  buttons:
+    previous:
+      slot: 48
+    back:
+      slot: 49
+    next:
+      slot: 50
+  pages:
+    1:
+      items:
+        1:
+          type: item
+          item:
+            material: COAL
+          buy: 100
+          sell: 10
+          slot: 1
+    2:
+      items:
+        1:
+          type: item
+          item:
+            material: COAL
+          buy: 100
+          sell: 10
+          slot: 6

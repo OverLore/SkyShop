@@ -1,0 +1,9 @@
+name: SkyShop
+version: '${project.version}'
+main: skyshop.skyshop.SkyShop
+api-version: 1.18
+prefix: SkyShop
+depend: [ SkyFont, Vault ]
+authors: [ Yellox_Wind ]
+description: Plugin de shop du serveur SkyNeoxx
+website: https://github.com/yelloxwind
