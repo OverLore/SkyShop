@@ -144,4 +144,18 @@ public class DataPackItems {
 
         return item;
     }
+
+    public static ItemStack getMoney(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(11);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
 }

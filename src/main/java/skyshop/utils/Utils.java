@@ -85,7 +85,7 @@ public class Utils {
         SetItemNBTInt(it, "amount", amount);
     }
 
-    public static Inventory openBuyPanel(Player player, ItemStack _item, int amount)
+    public static Inventory openBuyPanel(Player player, ItemStack _item, int amount, double playerBal)
     {
         Inventory inv = Bukkit.createInventory(null, 9*4, ChatColor.WHITE + SkyFont.getPlugin().getCharacter("inventoryBacks") + SkyFont.getPlugin().getCharacter("buyMenu"));
 
@@ -116,6 +116,8 @@ public class Utils {
         //ITEM
         inv.setItem(4, item);
         setShopItemMeta(inv, 4, "main", 0);
+        SetItemNBTFloat(inv.getItem(4), "buy", new NBTItem(_item).getFloat("buy"));
+        SetItemNBTFloat(inv.getItem(4), "sell", new NBTItem(_item).getFloat("sell"));
 
         //PLUS
         if (amount < 64)
@@ -138,8 +140,10 @@ public class Utils {
             inv.setItem(8, DataPackItems.getPlusItem("Mettre à 64", new ArrayList<>(), "#70f967", "#1dc711"));
         setShopItemMeta(inv, 8, "set", 64);
 
+        float price = new NBTItem(inv.getItem(4)).getFloat("buy") * amount;
+
         //NAV BUTTONS
-        inv.setItem(21, DataPackItems.getYes("Valider", new ArrayList<>(), "#e7383c", "#f79617"));
+        inv.setItem(21, DataPackItems.getYes("Valider", Arrays.asList((price > playerBal ? ChatColor.RED : ChatColor.GREEN) + "Pour " + String.format("%.2f", price) + ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
         setShopItemMeta(inv, 21, "confirm", 0);
         //inv.setItem(22, DataPackItems.getAll("Vendre tout", new ArrayList<>(), "#e7383c", "#f79617"));
         //setShopItemMeta(inv, 22, "all", 0);
@@ -149,8 +153,38 @@ public class Utils {
         inv.setItem(31, DataPackItems.getPlus("Acheter plus", new ArrayList<>(), "#e7383c", "#f79617"));
         setShopItemMeta(inv, 31, "more", 0);
 
+        inv.setItem(35, DataPackItems.getMoney("Balance :", Arrays.asList(ChatColor.WHITE + String.format("%.2f", playerBal) + SkyFont.getPlugin().getCharacter("money")), "#ffa800", "#fff000"));
+        setShopItemMeta(inv, 35, "none", 0);
+
         player.openInventory(inv);
 
         return inv;
+    }
+
+    public static int getItemGiveRest(Player player, ItemStack item, int amount)
+    {
+        Inventory inv = player.getInventory();
+
+        for (int i = 0; i < 36; i++)
+        {
+            if (amount <= 0)
+                return 0;
+
+            ItemStack slotItem = inv.getItem(i);
+
+            if (slotItem == null || slotItem.getType().isAir())
+            {
+                amount -= 64;
+
+                continue;
+            }
+
+            if (slotItem.getType() == item.getType())
+            {
+                amount -= 64 - slotItem.getAmount();
+            }
+        }
+
+        return amount;
     }
 }
