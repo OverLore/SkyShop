@@ -112,6 +112,10 @@ public class ShopEvent implements @NotNull Listener {
         NBTItem buyItemNBT = new NBTItem(buyItem);
 
         NBTItem itemNBT = new NBTItem(e.getCurrentItem());
+
+        if (itemNBT == null)
+            return false;
+
         String function = itemNBT.getString("function");
         int amount = itemNBT.getInteger("amount");
 
@@ -175,11 +179,105 @@ public class ShopEvent implements @NotNull Listener {
 
                 break;
             case "all":
+                float allPrice = amount * buyItemNBT.getFloat("buy");
+
+                plugin.economy.withdrawPlayer(player.getName(), allPrice);
+                player.sendMessage(ChatColor.GREEN + "[SkyShop] Vous avez acheté " + amount +
+                        "x" + buyItem.getI18NDisplayName() + " pour " + String.format("%.2f", allPrice) + ChatColor.WHITE +
+                        SkyFont.getPlugin().getCharacter("money"));
+                player.sendMessage(ChatColor.GREEN + "Il vous reste " + String.format("%.2f", playerBal - allPrice) +
+                        ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+
+                ItemStack rawIAlltem = new ItemStack(buyItem.getType());
+                rawIAlltem.setAmount(amount);
+
+                player.getInventory().addItem(rawIAlltem);
+
                 Utils.openMenu((Player) player);
+
                 break;
             case "more":
-                Utils.openMenu((Player) player);
+                Utils.openStackBuyPanel(player, buyItem, playerBal);
                 break;
+        }
+
+        return true;
+    }
+
+    boolean checkForBuyStack(InventoryClickEvent e)
+    {
+        ItemStack clickedItem = e.getCurrentItem();
+        Inventory inv = e.getClickedInventory();
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR)
+            return false;
+
+        if (!e.getView().getTitle().contains(SkyFont.getPlugin().getCharacter("achatStack")))
+            return false;
+
+        e.setCancelled(true);
+
+        Player player = (Player) e.getView().getPlayer();
+
+        NBTItem itemNBT = new NBTItem(e.getCurrentItem());
+
+        if (itemNBT == null)
+            return false;
+
+        String function = itemNBT.getString("function");
+
+        if (function == "back")
+        {
+            Utils.openMenu(player);
+
+            return true;
+        }
+        if (function == "buy")
+        {
+            float price = clickedItem.getAmount() * new NBTItem(clickedItem).getFloat("buy") * 64;
+
+            double playerBal = plugin.economy.getBalance(player.getName());
+
+            if (price > playerBal)
+            {
+                player.sendMessage(ChatColor.RED + "[Erreur] Vous n'avez pas assez d'argent pour acheter " +
+                        clickedItem.getAmount() + (clickedItem.getAmount() == 1 ? "x stack de " : "x stacks de ") +
+                        clickedItem.getI18NDisplayName() + " pour " + String.format("%.2f", price) +
+                        ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+                player.sendMessage(ChatColor.RED + "Il vous manque " + String.format("%.2f", price - playerBal) +
+                        ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+                return true;
+            }
+
+            plugin.economy.withdrawPlayer(player.getName(), price);
+            player.sendMessage(ChatColor.GREEN + "[SkyShop] Vous avez acheté " + clickedItem.getAmount() +
+                    (clickedItem.getAmount() == 1 ? "x stack de " : "x stacks de ") +
+                    clickedItem.getI18NDisplayName() + " pour " + String.format("%.2f", price) + ChatColor.WHITE +
+                    SkyFont.getPlugin().getCharacter("money"));
+            player.sendMessage(ChatColor.GREEN + "Il vous reste " + String.format("%.2f", playerBal - price) +
+                    ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+
+            ItemStack rawItem = new ItemStack(clickedItem.getType());
+            rawItem.setAmount(clickedItem.getAmount() * 64);
+
+            int rest = Utils.getItemGiveRest((Player) player, rawItem, clickedItem.getAmount() * 64);
+
+            player.getInventory().addItem(rawItem);
+
+            if (rest > 0)
+            {
+                player.sendMessage(ChatColor.RED + "Votre inventaire est plein.");
+
+                if (rest == 1)
+                    player.sendMessage(ChatColor.RED.toString() + rest + "x " + clickedItem.getI18NDisplayName() + " a été drop a vos pieds.");
+                else
+                    player.sendMessage(ChatColor.RED.toString() + rest + "x " + clickedItem.getI18NDisplayName() + " ont été drop a vos pieds.");
+
+                rawItem.setAmount(rest);
+                player.getWorld().dropItem(player.getLocation(), rawItem);
+            }
+
+            Utils.openMenu((Player) player);
         }
 
         return true;
@@ -192,6 +290,8 @@ public class ShopEvent implements @NotNull Listener {
         if (checkForCategory(e))
             return;
         if (checkForBuy(e))
+            return;
+        if (checkForBuyStack(e))
             return;
     }
 }

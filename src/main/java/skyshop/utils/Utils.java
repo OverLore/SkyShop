@@ -7,6 +7,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import skychat.skychat.SkyChat;
 import skyfont.skyfont.SkyFont;
 
 import java.util.ArrayList;
@@ -142,11 +144,18 @@ public class Utils {
 
         float price = new NBTItem(inv.getItem(4)).getFloat("buy") * amount;
 
+        int maxBuyableMoney = (int) (playerBal / new NBTItem(inv.getItem(4)).getFloat("buy"));
+        int maxBuyableInv = getMaxItemToFill(player, item);
+        int maxBuyable = Math.min(maxBuyableInv, maxBuyableMoney);
+
         //NAV BUTTONS
         inv.setItem(21, DataPackItems.getYes("Valider", Arrays.asList((price > playerBal ? ChatColor.RED : ChatColor.GREEN) + "Pour " + String.format("%.2f", price) + ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
         setShopItemMeta(inv, 21, "confirm", 0);
-        //inv.setItem(22, DataPackItems.getAll("Vendre tout", new ArrayList<>(), "#e7383c", "#f79617"));
-        //setShopItemMeta(inv, 22, "all", 0);
+        if (maxBuyable > 0)
+            inv.setItem(22, DataPackItems.getAll("Acheter max", Arrays.asList(ChatColor.WHITE.toString() + maxBuyable +
+                    " pour " + String.format("%.2f", new NBTItem(inv.getItem(4)).getFloat("buy") * maxBuyable) +
+                    SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
+        setShopItemMeta(inv, 22, "all", maxBuyable);
         inv.setItem(23, DataPackItems.getNo("Annuler", new ArrayList<>(), "#e7383c", "#f79617"));
         setShopItemMeta(inv, 23, "back", 0);
 
@@ -159,6 +168,68 @@ public class Utils {
         player.openInventory(inv);
 
         return inv;
+    }
+
+    static void setBuyableStack(Inventory inv, ItemStack item, int slotId, int stackAmount)
+    {
+        ItemStack newItem = new ItemStack(item);
+        newItem.setAmount(stackAmount);
+
+        ItemMeta newItemMeta = newItem.getItemMeta();
+
+        newItemMeta.setDisplayName(SkyChat.getPlugin().getGradient("" + stackAmount + (stackAmount == 1 ? " stack" : " stacks"), "#e7383c", "#f79617"));
+        newItemMeta.setLore(Arrays.asList(ChatColor.RED.toString() + ChatColor.BOLD + "Acheter" + ChatColor.WHITE + " : " + String.format("%.2f", new NBTItem(item).getFloat("buy") * stackAmount * 64) + SkyFont.getPlugin().getCharacter("money")));
+
+        newItem.setItemMeta(newItemMeta);
+
+        inv.setItem(slotId, newItem);
+
+        SetItemNBT(inv.getItem(slotId), "function", "buy");
+    }
+
+    public static Inventory openStackBuyPanel(Player player, ItemStack _item, double playerBal)
+    {
+        Inventory inv = Bukkit.createInventory(null, 9*3, ChatColor.WHITE + SkyFont.getPlugin().getCharacter("inventoryBacks") + SkyFont.getPlugin().getCharacter("achatStack"));
+
+        for (int i = 0; i < 9; i++)
+        {
+            setBuyableStack(inv, _item, i, i + 1);
+        }
+
+        inv.setItem(22, DataPackItems.getBack());
+        setShopItemMeta(inv, 22, "back", 0);
+
+        inv.setItem(26, DataPackItems.getMoney("Balance :", Arrays.asList(ChatColor.WHITE + String.format("%.2f", playerBal) + SkyFont.getPlugin().getCharacter("money")), "#ffa800", "#fff000"));
+        setShopItemMeta(inv, 26, "none", 0);
+
+        player.openInventory(inv);
+
+        return inv;
+    }
+
+    public static int getMaxItemToFill(Player player, ItemStack item)
+    {
+        Inventory inv = player.getInventory();
+
+        int amount = 0;
+
+        for (int i = 0; i < 36; i++) {
+            ItemStack slotItem = inv.getItem(i);
+
+            if (slotItem == null || slotItem.getType().isAir())
+            {
+                amount += 64;
+
+                continue;
+            }
+
+            if (slotItem.getType() == item.getType())
+            {
+                amount += 64 - slotItem.getAmount();
+            }
+        }
+
+        return amount;
     }
 
     public static int getItemGiveRest(Player player, ItemStack item, int amount)
