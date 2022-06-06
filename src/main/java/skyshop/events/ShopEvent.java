@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import skyfont.skyfont.SkyFont;
@@ -83,7 +84,55 @@ public class ShopEvent implements @NotNull Listener {
             return true;
         }
 
-        //Shop stuff
+        Utils.openBuyPanel((Player) e.getView().getPlayer(), clickedItem, 1);
+
+        return true;
+    }
+
+    //Check if player clicked in abuy menu
+    boolean checkForBuy(InventoryClickEvent e)
+    {
+        ItemStack clickedItem = e.getCurrentItem();
+        Inventory inv = e.getClickedInventory();
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR)
+            return false;
+
+        if (!e.getView().getTitle().contains(SkyFont.getPlugin().getCharacter("buyMenu")))
+            return false;
+
+        e.setCancelled(true);
+
+        ItemStack buyItem = inv.getItem(4);
+
+        NBTItem itemNBT = new NBTItem(e.getCurrentItem());
+        String function = itemNBT.getString("function");
+        int amount = itemNBT.getInteger("amount");
+
+        switch(function)
+        {
+            case "remove":
+                Utils.openBuyPanel((Player) e.getView().getPlayer(), buyItem, buyItem.getAmount() - amount);
+                break;
+            case "add":
+                Utils.openBuyPanel((Player) e.getView().getPlayer(), buyItem, buyItem.getAmount() + amount);
+                break;
+            case "set":
+                Utils.openBuyPanel((Player) e.getView().getPlayer(), buyItem, amount);
+                break;
+            case "back":
+                Utils.openMenu((Player) e.getView().getPlayer());
+                break;
+            case "confirm":
+                Utils.openMenu((Player) e.getView().getPlayer());
+                break;
+            case "all":
+                Utils.openMenu((Player) e.getView().getPlayer());
+                break;
+            case "more":
+                Utils.openMenu((Player) e.getView().getPlayer());
+                break;
+        }
 
         return true;
     }
@@ -93,6 +142,8 @@ public class ShopEvent implements @NotNull Listener {
         if (checkForMenu(e))
             return;
         if (checkForCategory(e))
+            return;
+        if (checkForBuy(e))
             return;
     }
 }

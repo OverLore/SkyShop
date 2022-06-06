@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import skyfont.skyfont.SkyFont;
 import skyshop.pages.Page;
 import skyshop.pages.ShopItem;
@@ -15,6 +16,7 @@ import skyshop.utils.DataPackItems;
 import skyshop.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Category {
@@ -110,6 +112,13 @@ public class Category {
             Utils.SetItemNBTFloat(it, "buy", item.buy);
             Utils.SetItemNBTFloat(it, "sell", item.sell);
             Utils.SetItemNBTFloat(it, "page", page);
+
+            ItemMeta itm = it.getItemMeta();
+
+            itm.setLore(Arrays.asList(ChatColor.RED.toString() + ChatColor.BOLD + "Acheter" + ChatColor.WHITE + " : " + String.format("%.2f", item.buy) + plugin.skyFont.getCharacter("money"),
+                    ChatColor.GREEN.toString() + ChatColor.BOLD + "Vendre" + ChatColor.WHITE + " : " + String.format("%.2f", item.sell) + plugin.skyFont.getCharacter("money")));
+
+            it.setItemMeta(itm);
 
             inv.setItem(item.slot, it);
         }

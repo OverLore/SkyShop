@@ -60,4 +60,88 @@ public class DataPackItems {
 
         return item;
     }
+
+    public static ItemStack getMinusItem(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(10);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
+    public static ItemStack getPlusItem(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(9);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
+    public static ItemStack getPlus(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(8);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
+    public static ItemStack getYes(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(5);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
+    public static ItemStack getNo(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(6);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
+    public static ItemStack getAll(String name, List<String> desc, String from, String to)
+    {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setCustomModelData(7);
+        itemMeta.setDisplayName(SkyChat.getGradient(name, from, to));
+        itemMeta.setLore(desc);
+
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
 }

@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class SkyShop extends JavaPlugin {
-    SkyFont skyFont;
-    SkyChat skyChat;
-    Economy economy;
+    public SkyFont skyFont;
+    public SkyChat skyChat;
+    public Economy economy;
 
     public List<Category> categories = new ArrayList<>();
     CategoryLoader categoryLoader = new CategoryLoader();
