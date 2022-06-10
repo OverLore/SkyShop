@@ -1,6 +1,8 @@
 package skyshop.utils;
 
+import de.tr7zw.nbtapi.NBTCompound;
 import de.tr7zw.nbtapi.NBTItem;
+import de.tr7zw.nbtapi.NBTType;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -14,6 +16,7 @@ import skyfont.skyfont.SkyFont;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class Utils {
     public static void SetItemNBT(ItemStack item, String nbtKey, String nbtValue)
@@ -170,6 +173,89 @@ public class Utils {
         return inv;
     }
 
+    public static Inventory openSellPanel(Player player, ItemStack _item, int amount, double playerBal)
+    {
+        Inventory inv = Bukkit.createInventory(null, 9*4, ChatColor.WHITE + SkyFont.getPlugin().getCharacter("inventoryBacks") + SkyFont.getPlugin().getCharacter("sellMenu"));
+
+        ItemStack item = new ItemStack(_item.getType());
+        item.setAmount(amount);
+
+        int inPlayerPossession = getNumberOfItem(player, _item);
+
+        //MINUS
+        if (amount > 1)
+            inv.setItem(0, DataPackItems.getMinusItem("Mettre à 1", new ArrayList<>(), "#f96767", "#c71111"));
+        setShopItemMeta(inv, 0, "set", 1);
+
+        ItemStack minus32 = DataPackItems.getMinusItem("Retirer 32", new ArrayList<>(), "#f96767", "#c71111");
+        minus32.setAmount(32);
+        if (amount > 32)
+            inv.setItem(1, minus32);
+        setShopItemMeta(inv, 1, "remove", 32);
+
+        ItemStack minus10 = DataPackItems.getMinusItem("Retirer 10", new ArrayList<>(), "#f96767", "#c71111");
+        minus10.setAmount(10);
+        if (amount > 10)
+            inv.setItem(2, minus10);
+        setShopItemMeta(inv, 2, "remove", 10);
+
+        if (amount > 1)
+            inv.setItem(3, DataPackItems.getMinusItem("Retirer 1", new ArrayList<>(), "#f96767", "#c71111"));
+        setShopItemMeta(inv, 3, "remove", 1);
+
+        //ITEM
+        inv.setItem(4, item);
+        setShopItemMeta(inv, 4, "main", 0);
+        SetItemNBTFloat(inv.getItem(4), "buy", new NBTItem(_item).getFloat("buy"));
+        SetItemNBTFloat(inv.getItem(4), "sell", new NBTItem(_item).getFloat("sell"));
+
+        //PLUS
+        if (amount < 64)
+            inv.setItem(5, DataPackItems.getPlusItem("Ajouter 1", new ArrayList<>(), "#70f967", "#1dc711"));
+        setShopItemMeta(inv, 5, "add", 1);
+
+        ItemStack plus10 = DataPackItems.getPlusItem("Ajouter 10", new ArrayList<>(), "#70f967", "#1dc711");
+        plus10.setAmount(10);
+        if (amount <= 54)
+            inv.setItem(6, plus10);
+        setShopItemMeta(inv, 6, "add", 10);
+
+        ItemStack plus32 = DataPackItems.getPlusItem("Ajouter 32", new ArrayList<>(), "#70f967", "#1dc711");
+        plus32.setAmount(32);
+        if (amount <= 32)
+            inv.setItem(7, plus32);
+        setShopItemMeta(inv, 7, "add", 32);
+
+        if (amount < 64)
+            inv.setItem(8, DataPackItems.getPlusItem("Mettre à 64", new ArrayList<>(), "#70f967", "#1dc711"));
+        setShopItemMeta(inv, 8, "set", 64);
+
+        float price = new NBTItem(inv.getItem(4)).getFloat("sell") * amount;
+
+        int maxSellable = inPlayerPossession;
+
+        //NAV BUTTONS
+        inv.setItem(21, DataPackItems.getYes("Valider", Arrays.asList((price > playerBal ? ChatColor.RED : ChatColor.GREEN) + "Pour " + String.format("%.2f", price) + ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
+        setShopItemMeta(inv, 21, "confirm", 0);
+        if (maxSellable > 0)
+            inv.setItem(22, DataPackItems.getAll("Vendre tout", Arrays.asList(ChatColor.WHITE.toString() + maxSellable +
+                    " pour " + String.format("%.2f", new NBTItem(inv.getItem(4)).getFloat("sell") * maxSellable) +
+                    SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
+        setShopItemMeta(inv, 22, "all", maxSellable);
+        inv.setItem(23, DataPackItems.getNo("Annuler", new ArrayList<>(), "#e7383c", "#f79617"));
+        setShopItemMeta(inv, 23, "back", 0);
+
+        inv.setItem(31, DataPackItems.getPlus("Vendre plus", new ArrayList<>(), "#e7383c", "#f79617"));
+        setShopItemMeta(inv, 31, "more", 0);
+
+        inv.setItem(35, DataPackItems.getMoney("Balance :", Arrays.asList(ChatColor.WHITE + String.format("%.2f", playerBal) + SkyFont.getPlugin().getCharacter("money")), "#ffa800", "#fff000"));
+        setShopItemMeta(inv, 35, "none", 0);
+
+        player.openInventory(inv);
+
+        return inv;
+    }
+
     static void setBuyableStack(Inventory inv, ItemStack item, int slotId, int stackAmount)
     {
         ItemStack newItem = new ItemStack(item);
@@ -203,6 +289,8 @@ public class Utils {
         setShopItemMeta(inv, 26, "none", 0);
 
         player.openInventory(inv);
+
+        player.sendMessage("Vous avez " + Utils.getNumberOfItem(player, _item));
 
         return inv;
     }
@@ -257,5 +345,68 @@ public class Utils {
         }
 
         return amount;
+    }
+
+    public static boolean hasSameNBT(ItemStack a, ItemStack b, List<String> ignoredKeys)
+    {
+        NBTItem anbt = new NBTItem(a);
+        NBTItem bnbt = new NBTItem(b);
+
+        Set<String> akeylist = anbt.getKeys();
+        Set<String> bkeylist = bnbt.getKeys();
+
+        if (akeylist.size() != bkeylist.size())
+            return false;
+
+        for (String aStr : akeylist)
+        {
+            boolean skip = false;
+
+            for (String ignoredKey : ignoredKeys) {
+                if (aStr.equalsIgnoreCase(ignoredKey))
+                {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if (skip)
+                continue;
+
+            boolean hasSame = false;
+
+            for (String bStr : bkeylist) {
+                if (aStr.equalsIgnoreCase(bStr))
+                {
+                    hasSame = true;
+                    break;
+                }
+            }
+
+            if (!hasSame)
+                return false;
+        }
+
+        return true;
+    }
+
+    public static int getNumberOfItem(Player player, ItemStack item)
+    {
+        Inventory inv = player.getInventory();
+
+        int count = 0;
+
+        for (int i = 0; i < 36; i++) {
+            ItemStack slotItem = inv.getItem(i);
+
+            if (slotItem == null || slotItem.getType() != item.getType() || hasSameNBT(item, slotItem, Arrays.asList("function", "amount", "buy", "sell")))
+            {
+                continue;
+            }
+
+            count += slotItem.getAmount();
+        }
+
+        return count;
     }
 }

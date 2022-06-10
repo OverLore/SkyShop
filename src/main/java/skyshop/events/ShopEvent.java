@@ -87,7 +87,16 @@ public class ShopEvent implements @NotNull Listener {
             return true;
         }
 
-        Utils.openBuyPanel((Player) e.getView().getPlayer(), clickedItem, 1, plugin.economy.getBalance(e.getView().getPlayer().getName()));
+        if (e.isLeftClick()) {
+            Utils.openBuyPanel((Player) e.getView().getPlayer(), clickedItem, 1, plugin.economy.getBalance(e.getView().getPlayer().getName()));
+
+            return true;
+        }
+        else if (e.isRightClick()) {
+            Utils.openSellPanel((Player) e.getView().getPlayer(), clickedItem, 1, plugin.economy.getBalance(e.getView().getPlayer().getName()));
+
+            return true;
+        }
 
         return true;
     }
@@ -283,6 +292,104 @@ public class ShopEvent implements @NotNull Listener {
         return true;
     }
 
+    //Check if player clicked in a sell menu
+    boolean checkForSell(InventoryClickEvent e)
+    {
+        ItemStack clickedItem = e.getCurrentItem();
+        Inventory inv = e.getClickedInventory();
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR)
+            return false;
+
+        if (!e.getView().getTitle().contains(SkyFont.getPlugin().getCharacter("sellMenu")))
+            return false;
+
+        e.setCancelled(true);
+
+        Player player = (Player) e.getView().getPlayer();
+
+        ItemStack sellItem = inv.getItem(4);
+        NBTItem sellItemNBT = new NBTItem(sellItem);
+
+        NBTItem itemNBT = new NBTItem(e.getCurrentItem());
+
+        if (itemNBT == null)
+            return false;
+
+        String function = itemNBT.getString("function");
+        int amount = itemNBT.getInteger("amount");
+
+        double playerBal = plugin.economy.getBalance(player.getName());
+
+        switch(function)
+        {
+            case "remove":
+                Utils.openSellPanel((Player) player, sellItem, sellItem.getAmount() - amount, playerBal);
+                break;
+            case "add":
+                Utils.openSellPanel((Player) player, sellItem, sellItem.getAmount() + amount, playerBal);
+                break;
+            case "set":
+                Utils.openSellPanel((Player) player, sellItem, amount, playerBal);
+                break;
+            case "back":
+                Utils.openMenu((Player) player);
+                break;
+            case "confirm":
+                float price = sellItem.getAmount() * sellItemNBT.getFloat("sell");
+                int inPlayerPossession = Utils.getNumberOfItem(player, sellItem);
+
+                player.sendMessage("t'as " + inPlayerPossession + " amount = " + amount);
+
+                if (sellItem.getAmount() > inPlayerPossession)
+                {
+                    player.sendMessage(ChatColor.RED + "[Erreur] Vous n'avez pas " +
+                            sellItem.getAmount() + "x" + sellItem.getI18NDisplayName() + (sellItem.getAmount() > 1 ? " items " : " item ") + "a vendre");
+                    player.sendMessage(ChatColor.RED + "Il vous manque " + (sellItem.getAmount() - inPlayerPossession) + "x" + sellItem.getI18NDisplayName());
+                    return true;
+                }
+
+                plugin.economy.depositPlayer(player.getName(), price);
+                player.sendMessage(ChatColor.GREEN + "[SkyShop] Vous avez vendu " + sellItem.getAmount() +
+                        "x" + sellItem.getI18NDisplayName() + " pour " + String.format("%.2f", price) + ChatColor.WHITE +
+                        SkyFont.getPlugin().getCharacter("money"));
+                player.sendMessage(ChatColor.GREEN + "Vous avez à présent " + String.format("%.2f", playerBal + price) +
+                        ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+
+                ItemStack rawItem = new ItemStack(sellItem.getType());
+                rawItem.setAmount(sellItem.getAmount());
+
+                player.getInventory().removeItemAnySlot(rawItem);
+
+                Utils.openMenu((Player) player);
+
+                break;
+            case "all":
+                float allPrice = amount * sellItemNBT.getFloat("sell");
+
+                plugin.economy.depositPlayer(player.getName(), allPrice);
+                player.sendMessage(ChatColor.GREEN + "[SkyShop] Vous avez vendu " + amount +
+                       "x" + sellItem.getI18NDisplayName() + " pour " + String.format("%.2f", allPrice) + ChatColor.WHITE +
+                       SkyFont.getPlugin().getCharacter("money"));
+                player.sendMessage(ChatColor.GREEN + "Vous avez à présent " + String.format("%.2f", playerBal + allPrice) +
+                       ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+
+                ItemStack rawIAlltem = new ItemStack(sellItem.getType());
+                rawIAlltem.setAmount(amount);
+
+                player.getInventory().removeItemAnySlot(rawIAlltem);
+
+                Utils.openMenu((Player) player);
+
+                break;
+            case "more":
+                Utils.openStackBuyPanel(player, sellItem, playerBal);
+                break;
+        }
+
+        return true;
+    }
+
     @EventHandler
     void OnPlayerInteractShop(InventoryClickEvent e) {
         if (checkForMenu(e))
@@ -292,6 +399,8 @@ public class ShopEvent implements @NotNull Listener {
         if (checkForBuy(e))
             return;
         if (checkForBuyStack(e))
+            return;
+        if (checkForSell(e))
             return;
     }
 }
