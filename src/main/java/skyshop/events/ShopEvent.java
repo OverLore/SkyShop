@@ -292,6 +292,71 @@ public class ShopEvent implements @NotNull Listener {
         return true;
     }
 
+    boolean checkForSellStack(InventoryClickEvent e)
+    {
+        ItemStack clickedItem = e.getCurrentItem();
+        Inventory inv = e.getClickedInventory();
+
+        if (clickedItem == null || clickedItem.getType() == Material.AIR)
+            return false;
+
+        if (!e.getView().getTitle().contains(SkyFont.getPlugin().getCharacter("venteStack")))
+            return false;
+
+        e.setCancelled(true);
+
+        Player player = (Player) e.getView().getPlayer();
+
+        NBTItem itemNBT = new NBTItem(clickedItem);
+
+        if (itemNBT == null)
+            return false;
+
+        int inPlayerPossession = Utils.getNumberOfItem(player, clickedItem);
+
+        String function = itemNBT.getString("function");
+
+        if (function.equals("back"))
+        {
+            Utils.openMenu(player);
+
+            return true;
+        }
+        if (function.equals("sell"))
+        {
+            float price = clickedItem.getAmount() * new NBTItem(clickedItem).getFloat("sell") * 64;
+
+            double playerBal = plugin.economy.getBalance(player.getName());
+
+            if (clickedItem.getAmount() * 64 > inPlayerPossession)
+            {
+                player.sendMessage(ChatColor.RED + "[Erreur] Vous n'avez pas " +
+                        clickedItem.getAmount() + (clickedItem.getAmount() == 1 ? "x stack de " : "x stacks de ") +
+                        clickedItem.getI18NDisplayName() + " a vendre");
+                player.sendMessage(ChatColor.RED + "Il vous manque " + (clickedItem.getAmount() * 64 - inPlayerPossession) +
+                        "x" + clickedItem.getI18NDisplayName());
+                return true;
+            }
+
+            plugin.economy.depositPlayer(player.getName(), price);
+            player.sendMessage(ChatColor.GREEN + "[SkyShop] Vous avez vendu " + clickedItem.getAmount() +
+                    (clickedItem.getAmount() == 1 ? "x stack de " : "x stacks de ") +
+                    clickedItem.getI18NDisplayName() + " pour " + String.format("%.2f", price) + ChatColor.WHITE +
+                    SkyFont.getPlugin().getCharacter("money"));
+            player.sendMessage(ChatColor.GREEN + "Vous avez à présent " + String.format("%.2f", playerBal + price) +
+                    ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money"));
+
+            ItemStack rawItem = new ItemStack(clickedItem.getType());
+            rawItem.setAmount(clickedItem.getAmount() * 64);
+
+            player.getInventory().removeItemAnySlot(rawItem);
+
+            Utils.openMenu((Player) player);
+        }
+
+        return true;
+    }
+
     //Check if player clicked in a sell menu
     boolean checkForSell(InventoryClickEvent e)
     {
@@ -383,7 +448,7 @@ public class ShopEvent implements @NotNull Listener {
 
                 break;
             case "more":
-                Utils.openStackBuyPanel(player, sellItem, playerBal);
+                Utils.openStackSellPanel(player, sellItem, playerBal);
                 break;
         }
 
@@ -401,6 +466,8 @@ public class ShopEvent implements @NotNull Listener {
         if (checkForBuyStack(e))
             return;
         if (checkForSell(e))
+            return;
+        if (checkForSellStack(e))
             return;
     }
 }

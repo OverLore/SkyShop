@@ -235,7 +235,7 @@ public class Utils {
         int maxSellable = inPlayerPossession;
 
         //NAV BUTTONS
-        inv.setItem(21, DataPackItems.getYes("Valider", Arrays.asList((price > playerBal ? ChatColor.RED : ChatColor.GREEN) + "Pour " + String.format("%.2f", price) + ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
+        inv.setItem(21, DataPackItems.getYes("Valider", Arrays.asList((amount > inPlayerPossession ? ChatColor.RED : ChatColor.GREEN) + "Pour " + String.format("%.2f", price) + ChatColor.WHITE + SkyFont.getPlugin().getCharacter("money")), "#e7383c", "#f79617"));
         setShopItemMeta(inv, 21, "confirm", 0);
         if (maxSellable > 0)
             inv.setItem(22, DataPackItems.getAll("Vendre tout", Arrays.asList(ChatColor.WHITE.toString() + maxSellable +
@@ -273,6 +273,23 @@ public class Utils {
         SetItemNBT(inv.getItem(slotId), "function", "buy");
     }
 
+    static void setSellableStack(Inventory inv, ItemStack item, int slotId, int stackAmount)
+    {
+        ItemStack newItem = new ItemStack(item);
+        newItem.setAmount(stackAmount);
+
+        ItemMeta newItemMeta = newItem.getItemMeta();
+
+        newItemMeta.setDisplayName(SkyChat.getPlugin().getGradient("" + stackAmount + (stackAmount == 1 ? " stack" : " stacks"), "#e7383c", "#f79617"));
+        newItemMeta.setLore(Arrays.asList(ChatColor.GREEN.toString() + ChatColor.BOLD + "Vendre" + ChatColor.WHITE + " : " + String.format("%.2f", new NBTItem(item).getFloat("sell") * stackAmount * 64) + SkyFont.getPlugin().getCharacter("money")));
+
+        newItem.setItemMeta(newItemMeta);
+
+        inv.setItem(slotId, newItem);
+
+        SetItemNBT(inv.getItem(slotId), "function", "sell");
+    }
+
     public static Inventory openStackBuyPanel(Player player, ItemStack _item, double playerBal)
     {
         Inventory inv = Bukkit.createInventory(null, 9*3, ChatColor.WHITE + SkyFont.getPlugin().getCharacter("inventoryBacks") + SkyFont.getPlugin().getCharacter("achatStack"));
@@ -290,7 +307,25 @@ public class Utils {
 
         player.openInventory(inv);
 
-        player.sendMessage("Vous avez " + Utils.getNumberOfItem(player, _item));
+        return inv;
+    }
+
+    public static Inventory openStackSellPanel(Player player, ItemStack _item, double playerBal)
+    {
+        Inventory inv = Bukkit.createInventory(null, 9*3, ChatColor.WHITE + SkyFont.getPlugin().getCharacter("inventoryBacks") + SkyFont.getPlugin().getCharacter("venteStack"));
+
+        for (int i = 0; i < 9; i++)
+        {
+            setSellableStack(inv, _item, i, i + 1);
+        }
+
+        inv.setItem(22, DataPackItems.getBack());
+        setShopItemMeta(inv, 22, "back", 0);
+
+        inv.setItem(26, DataPackItems.getMoney("Balance :", Arrays.asList(ChatColor.WHITE + String.format("%.2f", playerBal) + SkyFont.getPlugin().getCharacter("money")), "#ffa800", "#fff000"));
+        setShopItemMeta(inv, 26, "none", 0);
+
+        player.openInventory(inv);
 
         return inv;
     }
