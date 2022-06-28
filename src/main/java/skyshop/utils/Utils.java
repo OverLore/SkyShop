@@ -123,6 +123,7 @@ public class Utils {
         setShopItemMeta(inv, 4, "main", 0);
         SetItemNBTFloat(inv.getItem(4), "buy", new NBTItem(_item).getFloat("buy"));
         SetItemNBTFloat(inv.getItem(4), "sell", new NBTItem(_item).getFloat("sell"));
+        SetItemNBT(inv.getItem(4), "shopitem", new NBTItem(_item).getString("shopitem"));
 
         //PLUS
         if (amount < 64)
@@ -208,6 +209,7 @@ public class Utils {
         setShopItemMeta(inv, 4, "main", 0);
         SetItemNBTFloat(inv.getItem(4), "buy", new NBTItem(_item).getFloat("buy"));
         SetItemNBTFloat(inv.getItem(4), "sell", new NBTItem(_item).getFloat("sell"));
+        SetItemNBT(inv.getItem(4), "shopitem", new NBTItem(_item).getString("shopitem"));
 
         //PLUS
         if (amount < 64)

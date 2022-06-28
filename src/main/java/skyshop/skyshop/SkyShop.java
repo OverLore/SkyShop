@@ -21,8 +21,12 @@ public final class SkyShop extends JavaPlugin {
     public List<Category> categories = new ArrayList<>();
     CategoryLoader categoryLoader = new CategoryLoader();
 
+    public static SkyShop skyShop;
+
     @Override
     public void onEnable() {
+        skyShop = this;
+
         //Load dependencies
         skyFont = SkyFont.getPlugin();
         skyChat = SkyChat.getPlugin();

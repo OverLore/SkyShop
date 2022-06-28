@@ -14,15 +14,36 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import skyfont.skyfont.SkyFont;
 import skyshop.categories.Category;
+import skyshop.pages.ShopItem;
 import skyshop.skyshop.SkyShop;
 import skyshop.utils.Utils;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ShopEvent implements @NotNull Listener {
     SkyShop plugin;
 
+    String logStr = "";
+    String defaultPath;
+
     public ShopEvent(SkyShop skyShop) {
+
         plugin = skyShop;
+        defaultPath = plugin.getDataFolder() + "\\Logs\\";
     }
+
+    enum ShopAction
+    {
+        Buy,
+        Sell
+    };
 
     //Check if player clicked the shop main page
     boolean checkForMenu(InventoryClickEvent e)
@@ -186,6 +207,8 @@ public class ShopEvent implements @NotNull Listener {
 
                 Utils.openMenu((Player) player);
 
+                LogAction(player, ShopAction.Buy, buyItem, buyItem.getAmount(), price);
+
                 break;
             case "all":
                 float allPrice = amount * buyItemNBT.getFloat("buy");
@@ -203,6 +226,8 @@ public class ShopEvent implements @NotNull Listener {
                 player.getInventory().addItem(rawIAlltem);
 
                 Utils.openMenu((Player) player);
+
+                LogAction(player, ShopAction.Buy, buyItem, buyItem.getAmount(), allPrice);
 
                 break;
             case "more":
@@ -287,6 +312,8 @@ public class ShopEvent implements @NotNull Listener {
             }
 
             Utils.openMenu((Player) player);
+
+            LogAction(player, ShopAction.Buy, clickedItem, clickedItem.getAmount() * 64, price);
         }
 
         return true;
@@ -352,6 +379,8 @@ public class ShopEvent implements @NotNull Listener {
             player.getInventory().removeItemAnySlot(rawItem);
 
             Utils.openMenu((Player) player);
+
+            LogAction(player, ShopAction.Sell, clickedItem, clickedItem.getAmount() * 64, price);
         }
 
         return true;
@@ -428,6 +457,8 @@ public class ShopEvent implements @NotNull Listener {
 
                 Utils.openMenu((Player) player);
 
+                LogAction(player, ShopAction.Sell, sellItem, sellItem.getAmount(), price);
+
                 break;
             case "all":
                 float allPrice = amount * sellItemNBT.getFloat("sell");
@@ -445,6 +476,8 @@ public class ShopEvent implements @NotNull Listener {
                 player.getInventory().removeItemAnySlot(rawIAlltem);
 
                 Utils.openMenu((Player) player);
+
+                LogAction(player, ShopAction.Sell, sellItem, amount, allPrice);
 
                 break;
             case "more":
@@ -469,5 +502,61 @@ public class ShopEvent implements @NotNull Listener {
             return;
         if (checkForSellStack(e))
             return;
+    }
+
+    void LogAction(Player player, ShopAction action, ItemStack item, int quantity, float price)
+    {
+        SimpleDateFormat formatter= new SimpleDateFormat("HH-mm-ss");
+        SimpleDateFormat folderformatter= new SimpleDateFormat("dd-MM-yy");
+        Date date = new Date(System.currentTimeMillis());
+
+        NBTItem itemNBT = new NBTItem(item);
+
+        String folderPath = defaultPath + folderformatter.format(date);
+
+        logStr += "[" + folderformatter.format(date) + " " + formatter.format(date) + "] " + player.getName() +
+                (action == ShopAction.Buy ? " bought " : " sold ") + "x" + quantity + " " + itemNBT.getString("shopitem") +
+                " for " + price + "\n";
+
+        //125 is debug value. 5000 is a better one for production builds
+        //TODO: Set it to 5000
+        if (logStr.length() < 125)
+            return;
+
+        plugin.getLogger().info(folderPath);
+
+        Path defaultPathPath = Paths.get(defaultPath);
+        Path path = Paths.get(folderPath);
+        try {
+            if (!Files.exists(defaultPathPath))
+                Files.createDirectory(defaultPathPath);
+            if (!Files.exists(path))
+                Files.createDirectory(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File file = new File(folderPath + "\\" + formatter.format(date) + ".txt");
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter(folderPath + "\\" + formatter.format(date) + ".txt");
+            fileWriter.write(logStr);
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        logStr = "";
+    }
+
+    public ShopItem FindShopItem(String nbt)
+    {
+        return null;
     }
 }

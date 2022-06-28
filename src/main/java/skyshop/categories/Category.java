@@ -111,7 +111,7 @@ public class Category {
             //Store item data as nbt
             Utils.SetItemNBTFloat(it, "buy", item.buy);
             Utils.SetItemNBTFloat(it, "sell", item.sell);
-            Utils.SetItemNBTFloat(it, "page", page);
+            Utils.SetItemNBT(it, "shopitem", item.ToString(name, page, item.slot));
 
             ItemMeta itm = it.getItemMeta();
 
